@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistente de Escolha de DLT</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 1.8em;
+            text-align: center;
+            color: #1e90ff;
+            margin-bottom: 20px;
+        }
+        .question {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        button {
+            background-color: #1e90ff;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #1c86ee;
+        }
+        button:focus {
+            outline: none;
+        }
+        .result {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .result h2 {
+            font-size: 1.6em;
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        .result p {
+            font-size: 1.1em;
+            margin: 5px 0;
+        }
+        .metrics {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.05);
+            margin-top: 20px;
+            font-size: 1.1em;
+        }
+        .metrics p {
+            margin: 8px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Assistente de Escolha de DLT</h1>
+        <div id="question-container">
+            <p class="question" id="question-text"></p>
+            <div style="text-align: center;">
+                <button onclick="answerQuestion('sim')">Sim</button>
+                <button onclick="answerQuestion('não')">Não</button>
+            </div>
+        </div>
+        <div id="result-container" class="result" style="display:none;">
+            <h2>Recomendação final</h2>
+            <p id="recommendation"></p>
+            <p id="consensus"></p>
+            <div class="metrics" id="metrics"></div>
+        </div>
+    </div>
+
+    <script>
+        class DLTNode {
+            constructor(question, yes = null, no = null, recommendation = null, consensus = null) {
+                this.question = question;
+                this.yes = yes;
+                this.no = no;
+                this.recommendation = recommendation;
+                this.consensus = consensus;
+            }
+        }
+
+        const treeRoot = new DLTNode("O sistema precisa garantir acesso imutável aos dados?",
+            new DLTNode("O sistema requer terceiros confiáveis para validar transações?",
+                new DLTNode("A segurança dos dados é crítica?",
+                    new DLTNode("O sistema precisa de controle robusto de acesso?",
+                        new DLTNode("O sistema precisa ser escalável?",
+                            new DLTNode("O sistema precisa de atualizações frequentes de dados?",
+                                new DLTNode("A eficiência energética é uma preocupação central?",
+                                    new DLTNode(null, null, null, "DLT Permissionada", "PoS (Prova de Participação)"),
+                                    new DLTNode(null, null, null, "DLT Permissionada", "PoW (Prova de Trabalho)")
+                                ),
+                                new DLTNode(null, null, null, "DLT Permissionada", "PBFT (Byzantine Fault Tolerance)")
+                            ),
+                            new DLTNode(null, null, null, "DLT Permissionada Simples", "N/A")
+                        ),
+                        new DLTNode(null, null, null, "Algoritmos Delegados", "N/A")
+                    ),
+                    new DLTNode(null, null, null, "DLT Pública", "PoW (Prova de Trabalho)")
+                ),
+                new DLTNode(null, null, null, "DLT Pública", "PoW (Prova de Trabalho)")
+            ),
+            new DLTNode(null, null, null, "Uma DLT pode não ser necessária.", "N/A")
+        );
+
+        let currentNode = treeRoot;
+        let countSim = 0;
+        let countNao = 0;
+        let depth = 1;
+
+        function updateMetrics() {
+            const metrics = `
+                <p>Número de nós: ${countSim + countNao}</p>
+                <p>Profundidade da árvore: ${calculateMaxDepth(treeRoot)}</p>
+                <p>Número de nós folha: ${countLeafNodes(treeRoot)}</p>
+                <p>Número de nós internos: ${countInternalNodes(treeRoot)}</p>
+                <p>Fator de ramificação médio: ${calculateAverageBranchingFactor(treeRoot).toFixed(2)}</p>
+            `;
+            document.getElementById("metrics").innerHTML = metrics;
+        }
+
+        function answerQuestion(response) {
+            if (response === "sim") {
+                countSim++;
+                currentNode = currentNode.yes;
+            } else if (response === "não") {
+                countNao++;
+                currentNode = currentNode.no;
+            }
+
+            depth++;
+
+            if (currentNode.question) {
+                document.getElementById("question-text").textContent = currentNode.question;
+            } else {
+                showResult(currentNode);
+            }
+
+            updateMetrics();
+        }
+
+        function showResult(node) {
+            document.getElementById("question-container").style.display = "none";
+            document.getElementById("result-container").style.display = "block";
+            document.getElementById("recommendation").textContent = `Tipo de DLT: ${node.recommendation}`;
+            document.getElementById("consensus").textContent = `Algoritmo de Consenso: ${node.consensus}`;
+            updateMetrics();
+        }
+
+        function countLeafNodes(node) {
+            if (node === null) return 0;
+            if (node.yes === null && node.no === null) return 1;
+            return countLeafNodes(node.yes) + countLeafNodes(node.no);
+        }
+
+        function countInternalNodes(node) {
+            if (node === null) return 0;
+            if (node.yes === null && node.no === null) return 0;
+            return 1 + countInternalNodes(node.yes) + countInternalNodes(node.no);
+        }
+
+        function calculateMaxDepth(node) {
+            if (node === null) return 0;
+            return 1 + Math.max(calculateMaxDepth(node.yes), calculateMaxDepth(node.no));
+        }
+
+        function calculateAverageBranchingFactor(node) {
+            const internalNodes = countInternalNodes(node);
+            if (internalNodes === 0) return 0;
+            return (countNodes(node) - 1) / internalNodes;
+        }
+
+        function countNodes(node) {
+            if (node === null) return 0;
+            return 1 + countNodes(node.yes) + countNodes(node.no);
+        }
+
+        window.onload = function () {
+            document.getElementById("question-text").textContent = currentNode.question;
+            updateMetrics();
+        };
+    </script>
+</body>
+</html>
